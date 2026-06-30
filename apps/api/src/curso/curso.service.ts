@@ -32,11 +32,7 @@ export class CursoService {
     return curso;
   }
 
-  findAll(
-    page = 1,
-    limit = 10,
-    nome?: string,
-  ): PaginatedResult<Curso> {
+  findAll(page = 1, limit = 10, nome?: string): PaginatedResult<Curso> {
     let filtered = this.cursos;
     if (nome) {
       filtered = filtered.filter((c) =>
@@ -68,8 +64,7 @@ export class CursoService {
 
     if (dto.nome) {
       const exists = this.cursos.find(
-        (c) =>
-          c.nome.toLowerCase() === dto.nome!.toLowerCase() && c.id !== id,
+        (c) => c.nome.toLowerCase() === dto.nome!.toLowerCase() && c.id !== id,
       );
       if (exists) {
         throw new ConflictException('Já existe um curso com este nome');

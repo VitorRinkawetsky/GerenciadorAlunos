@@ -94,8 +94,7 @@ export class AlunoService {
     if (dto.email) {
       const emailExists = this.alunos.find(
         (a) =>
-          a.email.toLowerCase() === dto.email!.toLowerCase() &&
-          a.id !== id,
+          a.email.toLowerCase() === dto.email!.toLowerCase() && a.id !== id,
       );
       if (emailExists) {
         throw new ConflictException('Já existe um aluno com este email');
@@ -110,9 +109,7 @@ export class AlunoService {
           a.id !== id,
       );
       if (matriculaExists) {
-        throw new ConflictException(
-          'Já existe um aluno com esta matrícula',
-        );
+        throw new ConflictException('Já existe um aluno com esta matrícula');
       }
       aluno.matricula = dto.matricula;
     }
