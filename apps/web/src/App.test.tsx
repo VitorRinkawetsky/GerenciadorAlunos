@@ -1,6 +1,19 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import App from './App'
+
+// As páginas buscam dados via fetch ao montar; sem isso os testes de
+// componente disparam chamadas de rede reais contra a API e derrubam a
+// suíte com unhandled rejections quando não há backend rodando.
+vi.mock('./services/api', () => {
+  const empty = () => Promise.resolve([])
+  return {
+    cursosApi: { list: empty },
+    alunosApi: { list: empty },
+    disciplinasApi: { list: empty },
+    matriculasApi: { list: empty },
+  }
+})
 
 describe('App', () => {
   it('renderiza o header com o nome da aplicação', () => {

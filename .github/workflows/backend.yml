@@ -73,6 +73,9 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     env:
       RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+    defaults:
+      run:
+        working-directory: .
     steps:
       - name: Trigger Render deploy hook
         if: ${{ env.RENDER_DEPLOY_HOOK_URL != '' }}
