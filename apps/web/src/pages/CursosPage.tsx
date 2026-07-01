@@ -1,29 +1,33 @@
-import { useState, useEffect } from 'react'
-import type { Curso } from '../api'
-import { cursosApi } from '../api'
+import { useState } from 'react'
+import type { Curso } from '../types'
+import { cursosApi } from '../services/api'
+import { useCursos } from '../hooks/useCursos'
+import { pluralize } from '../utils/format'
 import Modal from '../components/Modal'
+import { toast } from '../components/Toast'
 
 interface FormState { nome: string; descricao: string }
 const EMPTY: FormState = { nome: '', descricao: '' }
 
 export default function CursosPage() {
-  const [cursos, setCursos] = useState<Curso[]>([])
+  const { cursos, reload } = useCursos()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Curso | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY)
   const [saving, setSaving] = useState(false)
-
-  useEffect(() => { cursosApi.list().then(setCursos) }, [])
-
-  const reload = () => cursosApi.list().then(setCursos)
 
   const openCreate = () => { setEditing(null); setForm(EMPTY); setOpen(true) }
   const openEdit = (c: Curso) => { setEditing(c); setForm({ nome: c.nome, descricao: c.descricao }); setOpen(true) }
 
   const handleDelete = async (id: number) => {
     if (!confirm('Excluir este curso?')) return
-    await cursosApi.delete(id)
-    reload()
+    try {
+      await cursosApi.delete(id)
+      toast('Curso excluído com sucesso')
+      reload()
+    } catch {
+      toast('Erro ao excluir curso', 'error')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,8 +35,11 @@ export default function CursosPage() {
     setSaving(true)
     try {
       editing ? await cursosApi.update(editing.id, form) : await cursosApi.create(form)
+      toast(editing ? 'Curso atualizado' : 'Curso criado com sucesso')
       setOpen(false)
       reload()
+    } catch {
+      toast('Erro ao salvar curso', 'error')
     } finally {
       setSaving(false)
     }
@@ -43,7 +50,7 @@ export default function CursosPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Cursos</h1>
-          <p className="page-subtitle">{cursos.length} curso{cursos.length !== 1 ? 's' : ''} cadastrado{cursos.length !== 1 ? 's' : ''}</p>
+          <p className="page-subtitle">{pluralize(cursos.length, 'curso cadastrado', 'cursos cadastrados')}</p>
         </div>
         <button className="btn btn-primary" onClick={openCreate}>+ Novo Curso</button>
       </div>

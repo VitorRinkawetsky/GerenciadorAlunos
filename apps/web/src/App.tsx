@@ -3,6 +3,7 @@ import './App.css'
 import AlunosPage from './pages/AlunosPage'
 import CursosPage from './pages/CursosPage'
 import DisciplinasPage from './pages/DisciplinasPage'
+import ToastContainer from './components/Toast'
 
 type Tab = 'alunos' | 'cursos' | 'disciplinas'
 
@@ -43,6 +44,7 @@ export default function App() {
         {tab === 'cursos' && <CursosPage />}
         {tab === 'disciplinas' && <DisciplinasPage />}
       </main>
+      <ToastContainer />
     </div>
   )
 }

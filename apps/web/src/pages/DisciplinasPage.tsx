@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react'
-import type { Disciplina, Curso } from '../api'
-import { disciplinasApi, cursosApi } from '../api'
+import { useState } from 'react'
+import type { Disciplina } from '../types'
+import { disciplinasApi } from '../services/api'
+import { useDisciplinas } from '../hooks/useDisciplinas'
+import { useCursos } from '../hooks/useCursos'
+import { pluralize, vagasPct } from '../utils/format'
 import Modal from '../components/Modal'
+import { toast } from '../components/Toast'
 
 interface FormState {
   nome: string; codigo: string; cargaHoraria: string; limiteVagas: string
@@ -14,19 +18,13 @@ const EMPTY: FormState = {
 }
 
 export default function DisciplinasPage() {
-  const [disciplinas, setDisciplinas] = useState<Disciplina[]>([])
-  const [cursos, setCursos] = useState<Curso[]>([])
+  const { disciplinas, reload } = useDisciplinas()
+  const { cursos } = useCursos()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Disciplina | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    disciplinasApi.list().then(setDisciplinas)
-    cursosApi.list().then(setCursos)
-  }, [])
-
-  const reload = () => disciplinasApi.list().then(setDisciplinas)
   const cursoNome = (id: number) => cursos.find(c => c.id === id)?.nome ?? '—'
 
   const prereqOptions = (cursoId: string) =>
@@ -45,8 +43,13 @@ export default function DisciplinasPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm('Excluir esta disciplina?')) return
-    await disciplinasApi.delete(id)
-    reload()
+    try {
+      await disciplinasApi.delete(id)
+      toast('Disciplina excluída com sucesso')
+      reload()
+    } catch {
+      toast('Erro ao excluir disciplina', 'error')
+    }
   }
 
   const togglePrereq = (id: number) =>
@@ -67,8 +70,11 @@ export default function DisciplinasPage() {
     }
     try {
       editing ? await disciplinasApi.update(editing.id, payload) : await disciplinasApi.create(payload)
+      toast(editing ? 'Disciplina atualizada' : 'Disciplina criada com sucesso')
       setOpen(false)
       reload()
+    } catch {
+      toast('Erro ao salvar disciplina', 'error')
     } finally {
       setSaving(false)
     }
@@ -82,7 +88,7 @@ export default function DisciplinasPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Disciplinas</h1>
-          <p className="page-subtitle">{disciplinas.length} disciplina{disciplinas.length !== 1 ? 's' : ''} cadastrada{disciplinas.length !== 1 ? 's' : ''}</p>
+          <p className="page-subtitle">{pluralize(disciplinas.length, 'disciplina cadastrada', 'disciplinas cadastradas')}</p>
         </div>
         <button className="btn btn-primary" onClick={openCreate}>+ Nova Disciplina</button>
       </div>
@@ -105,7 +111,7 @@ export default function DisciplinasPage() {
             {disciplinas.length === 0 ? (
               <tr><td colSpan={8} className="table-empty">Nenhuma disciplina cadastrada ainda.</td></tr>
             ) : disciplinas.map(d => {
-              const pct = d.limiteVagas > 0 ? Math.round((d.vagasOcupadas / d.limiteVagas) * 100) : 0
+              const pct = vagasPct(d.vagasOcupadas, d.limiteVagas)
               const full = d.vagasOcupadas >= d.limiteVagas
               return (
                 <tr key={d.id}>

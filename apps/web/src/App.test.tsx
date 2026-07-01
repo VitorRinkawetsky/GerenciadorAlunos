@@ -1,17 +1,34 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import App from './App'
 
 describe('App', () => {
-  it('renders the get started heading', () => {
+  it('renderiza o header com o nome da aplicação', () => {
     render(<App />)
-    expect(screen.getByText('Get started')).toBeInTheDocument()
+    expect(screen.getByText('GerenciadorAlunos')).toBeInTheDocument()
   })
 
-  it('increments the counter on click', async () => {
+  it('mostra as três abas de navegação', () => {
     render(<App />)
-    const button = screen.getByRole('button', { name: /count is 0/i })
-    button.click()
-    expect(await screen.findByText(/count is 1/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /alunos/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cursos/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /disciplinas/i })).toBeInTheDocument()
+  })
+
+  it('abre a aba Alunos por padrão', () => {
+    render(<App />)
+    expect(screen.getByText('Alunos matriculados', { exact: false })).toBeInTheDocument()
+  })
+
+  it('navega para Cursos ao clicar na aba', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: /cursos/i }))
+    expect(screen.getByText('Cursos cadastrados', { exact: false })).toBeInTheDocument()
+  })
+
+  it('navega para Disciplinas ao clicar na aba', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: /disciplinas/i }))
+    expect(screen.getByText('Disciplinas cadastradas', { exact: false })).toBeInTheDocument()
   })
 })

@@ -1,25 +1,22 @@
-import { useState, useEffect } from 'react'
-import type { Aluno, Curso } from '../api'
-import { alunosApi, cursosApi } from '../api'
+import { useState } from 'react'
+import type { Aluno } from '../types'
+import { alunosApi } from '../services/api'
+import { useAlunos } from '../hooks/useAlunos'
+import { useCursos } from '../hooks/useCursos'
+import { pluralize } from '../utils/format'
 import Modal from '../components/Modal'
+import { toast } from '../components/Toast'
 
 interface FormState { nome: string; email: string; matricula: string; cursoId: string }
 const EMPTY: FormState = { nome: '', email: '', matricula: '', cursoId: '' }
 
 export default function AlunosPage() {
-  const [alunos, setAlunos] = useState<Aluno[]>([])
-  const [cursos, setCursos] = useState<Curso[]>([])
+  const { alunos, reload } = useAlunos()
+  const { cursos } = useCursos()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Aluno | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY)
   const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    alunosApi.list().then(setAlunos)
-    cursosApi.list().then(setCursos)
-  }, [])
-
-  const reload = () => alunosApi.list().then(setAlunos)
 
   const cursoNome = (id: number) => cursos.find(c => c.id === id)?.nome ?? '—'
 
@@ -32,8 +29,13 @@ export default function AlunosPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm('Excluir este aluno?')) return
-    await alunosApi.delete(id)
-    reload()
+    try {
+      await alunosApi.delete(id)
+      toast('Aluno excluído com sucesso')
+      reload()
+    } catch {
+      toast('Erro ao excluir aluno', 'error')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,8 +44,11 @@ export default function AlunosPage() {
     const payload = { ...form, cursoId: Number(form.cursoId) }
     try {
       editing ? await alunosApi.update(editing.id, payload) : await alunosApi.create(payload)
+      toast(editing ? 'Aluno atualizado' : 'Aluno criado com sucesso')
       setOpen(false)
       reload()
+    } catch {
+      toast('Erro ao salvar aluno', 'error')
     } finally {
       setSaving(false)
     }
@@ -57,7 +62,7 @@ export default function AlunosPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Alunos</h1>
-          <p className="page-subtitle">{alunos.length} aluno{alunos.length !== 1 ? 's' : ''} matriculado{alunos.length !== 1 ? 's' : ''}</p>
+          <p className="page-subtitle">{pluralize(alunos.length, 'aluno matriculado', 'alunos matriculados')}</p>
         </div>
         <button className="btn btn-primary" onClick={openCreate}>+ Novo Aluno</button>
       </div>
