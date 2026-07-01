@@ -3,14 +3,16 @@ import './App.css'
 import AlunosPage from './pages/AlunosPage'
 import CursosPage from './pages/CursosPage'
 import DisciplinasPage from './pages/DisciplinasPage'
+import MatriculasPage from './pages/MatriculasPage'
 import ToastContainer from './components/Toast'
 
-type Tab = 'alunos' | 'cursos' | 'disciplinas'
+type Tab = 'alunos' | 'cursos' | 'disciplinas' | 'matriculas'
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: 'alunos', label: 'Alunos', icon: '👤' },
   { key: 'cursos', label: 'Cursos', icon: '📚' },
   { key: 'disciplinas', label: 'Disciplinas', icon: '📋' },
+  { key: 'matriculas', label: 'Matrículas', icon: '📝' },
 ]
 
 export default function App() {
@@ -43,6 +45,7 @@ export default function App() {
         {tab === 'alunos' && <AlunosPage />}
         {tab === 'cursos' && <CursosPage />}
         {tab === 'disciplinas' && <DisciplinasPage />}
+        {tab === 'matriculas' && <MatriculasPage />}
       </main>
       <ToastContainer />
     </div>

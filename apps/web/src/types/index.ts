@@ -29,3 +29,10 @@ export interface Disciplina {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Matricula {
+  id: number;
+  alunoId: number;
+  disciplinaId: number;
+  createdAt: string;
+}

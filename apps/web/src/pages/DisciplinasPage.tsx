@@ -47,8 +47,8 @@ export default function DisciplinasPage() {
       await disciplinasApi.delete(id)
       toast('Disciplina excluída com sucesso')
       reload()
-    } catch {
-      toast('Erro ao excluir disciplina', 'error')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Erro ao excluir disciplina', 'error')
     }
   }
 
@@ -73,8 +73,8 @@ export default function DisciplinasPage() {
       toast(editing ? 'Disciplina atualizada' : 'Disciplina criada com sucesso')
       setOpen(false)
       reload()
-    } catch {
-      toast('Erro ao salvar disciplina', 'error')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Erro ao salvar disciplina', 'error')
     } finally {
       setSaving(false)
     }

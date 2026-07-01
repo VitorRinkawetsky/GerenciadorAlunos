@@ -33,8 +33,8 @@ export default function AlunosPage() {
       await alunosApi.delete(id)
       toast('Aluno excluído com sucesso')
       reload()
-    } catch {
-      toast('Erro ao excluir aluno', 'error')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Erro ao excluir aluno', 'error')
     }
   }
 
@@ -47,8 +47,8 @@ export default function AlunosPage() {
       toast(editing ? 'Aluno atualizado' : 'Aluno criado com sucesso')
       setOpen(false)
       reload()
-    } catch {
-      toast('Erro ao salvar aluno', 'error')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Erro ao salvar aluno', 'error')
     } finally {
       setSaving(false)
     }

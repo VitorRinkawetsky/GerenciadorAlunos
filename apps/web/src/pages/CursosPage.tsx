@@ -25,8 +25,8 @@ export default function CursosPage() {
       await cursosApi.delete(id)
       toast('Curso excluído com sucesso')
       reload()
-    } catch {
-      toast('Erro ao excluir curso', 'error')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Erro ao excluir curso', 'error')
     }
   }
 
@@ -38,8 +38,8 @@ export default function CursosPage() {
       toast(editing ? 'Curso atualizado' : 'Curso criado com sucesso')
       setOpen(false)
       reload()
-    } catch {
-      toast('Erro ao salvar curso', 'error')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Erro ao salvar curso', 'error')
     } finally {
       setSaving(false)
     }

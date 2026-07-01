@@ -109,6 +109,10 @@
   overflow: hidden;
 }
 
+/* ── Filters ────────────────────────────────────────────────────────────── */
+.filters-row { display: flex; gap: 16px; padding: 16px 16px 0; }
+.filters-row .field { flex: 1; max-width: 280px; }
+
 /* ── Table ──────────────────────────────────────────────────────────────── */
 .table { width: 100%; border-collapse: collapse; font-size: 14px; }
 

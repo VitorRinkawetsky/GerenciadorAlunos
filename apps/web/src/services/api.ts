@@ -1,104 +1,87 @@
-import type { Curso, Aluno, Disciplina } from '../types'
+import type { Curso, Aluno, Disciplina, Matricula } from '../types'
 
-export const API_BASE = (import.meta as any).env?.VITE_API_URL ?? 'http://localhost:3000';
+export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
-// ── Mock Store ────────────────────────────────────────────────────────────────
+interface PaginatedResult<T> {
+  data: T[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+}
 
-let _cursos: Curso[] = [
-  { id: 1, nome: 'Ciência da Computação', descricao: 'Graduação com foco em algoritmos, teoria da computação e sistemas operacionais.', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 2, nome: 'Engenharia de Software', descricao: 'Formação voltada ao desenvolvimento, testes e manutenção de sistemas de software.', createdAt: '2024-01-02T00:00:00Z', updatedAt: '2024-01-02T00:00:00Z' },
-  { id: 3, nome: 'Sistemas de Informação', descricao: 'Integra tecnologia da informação com gestão empresarial e tomada de decisão.', createdAt: '2024-01-03T00:00:00Z', updatedAt: '2024-01-03T00:00:00Z' },
-];
+// Backend pagina em 10 itens por padrão; como o front ainda não tem paginação,
+// pedimos o limite máximo aceito pela API para trazer a lista inteira.
+const LIST_QS = '?limit=100';
 
-let _alunos: Aluno[] = [
-  { id: 1, nome: 'Ana Silva', email: 'ana.silva@email.com', matricula: 'CC2024001', cursoId: 1, createdAt: '2024-02-01T00:00:00Z', updatedAt: '2024-02-01T00:00:00Z' },
-  { id: 2, nome: 'Bruno Santos', email: 'bruno.santos@email.com', matricula: 'ES2024001', cursoId: 2, createdAt: '2024-02-02T00:00:00Z', updatedAt: '2024-02-02T00:00:00Z' },
-  { id: 3, nome: 'Carla Oliveira', email: 'carla.oliveira@email.com', matricula: 'SI2024001', cursoId: 3, createdAt: '2024-02-03T00:00:00Z', updatedAt: '2024-02-03T00:00:00Z' },
-  { id: 4, nome: 'Diego Martins', email: 'diego.martins@email.com', matricula: 'CC2024002', cursoId: 1, createdAt: '2024-02-04T00:00:00Z', updatedAt: '2024-02-04T00:00:00Z' },
-];
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...init?.headers },
+  });
 
-let _disciplinas: Disciplina[] = [
-  { id: 1, nome: 'Algoritmos e Estruturas de Dados', codigo: 'AED001', cargaHoraria: 80, limiteVagas: 40, vagasOcupadas: 35, ativa: true, cursoId: 1, prerequisitoIds: [], createdAt: '2024-03-01T00:00:00Z', updatedAt: '2024-03-01T00:00:00Z' },
-  { id: 2, nome: 'Programação Orientada a Objetos', codigo: 'POO001', cargaHoraria: 60, limiteVagas: 40, vagasOcupadas: 28, ativa: true, cursoId: 1, prerequisitoIds: [1], createdAt: '2024-03-02T00:00:00Z', updatedAt: '2024-03-02T00:00:00Z' },
-  { id: 3, nome: 'Engenharia de Requisitos', codigo: 'ER001', cargaHoraria: 60, limiteVagas: 35, vagasOcupadas: 30, ativa: true, cursoId: 2, prerequisitoIds: [], createdAt: '2024-03-03T00:00:00Z', updatedAt: '2024-03-03T00:00:00Z' },
-  { id: 4, nome: 'Banco de Dados', codigo: 'BD001', cargaHoraria: 80, limiteVagas: 40, vagasOcupadas: 40, ativa: false, cursoId: 1, prerequisitoIds: [1], createdAt: '2024-03-04T00:00:00Z', updatedAt: '2024-03-04T00:00:00Z' },
-];
+  const text = await res.text();
+  const body = text ? JSON.parse(text) : null;
 
-const _seq = { cursos: 4, alunos: 5, disciplinas: 5 };
-const ts = () => new Date().toISOString();
+  if (!res.ok) {
+    const message = Array.isArray(body?.message) ? body.message.join(', ') : body?.message;
+    throw new Error(message || `Erro ${res.status} ao acessar ${path}`);
+  }
+
+  return body as T;
+}
+
+// Resposta de disciplina do back expõe `vagasDisponiveis` em vez de `vagasOcupadas`.
+type DisciplinaResponse = Omit<Disciplina, 'vagasOcupadas'> & { vagasDisponiveis: number };
+
+function toDisciplina(raw: DisciplinaResponse): Disciplina {
+  const { vagasDisponiveis, ...rest } = raw;
+  return { ...rest, vagasOcupadas: rest.limiteVagas - vagasDisponiveis };
+}
 
 // ── Cursos ────────────────────────────────────────────────────────────────────
-// Para conectar ao backend: descomente o fetch e remova a linha do mock abaixo.
 
 export const cursosApi = {
-  list: async (): Promise<Curso[]> => {
-    // return fetch(`${API_BASE}/cursos`).then(r => r.json()).then(p => p.data ?? p);
-    return [..._cursos];
-  },
-  create: async (data: Pick<Curso, 'nome' | 'descricao'>): Promise<Curso> => {
-    // return fetch(`${API_BASE}/cursos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
-    const item: Curso = { ...data, id: ++_seq.cursos, createdAt: ts(), updatedAt: ts() };
-    _cursos.push(item);
-    return item;
-  },
-  update: async (id: number, data: Partial<Pick<Curso, 'nome' | 'descricao'>>): Promise<Curso> => {
-    // return fetch(`${API_BASE}/cursos/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
-    const i = _cursos.findIndex(c => c.id === id);
-    _cursos[i] = { ..._cursos[i], ...data, updatedAt: ts() };
-    return _cursos[i];
-  },
-  delete: async (id: number): Promise<void> => {
-    // await fetch(`${API_BASE}/cursos/${id}`, { method: 'DELETE' });
-    _cursos = _cursos.filter(c => c.id !== id);
-  },
+  list: (): Promise<Curso[]> =>
+    request<PaginatedResult<Curso>>(`/cursos${LIST_QS}`).then(p => p.data),
+  create: (data: Pick<Curso, 'nome' | 'descricao'>): Promise<Curso> =>
+    request('/cursos', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<Pick<Curso, 'nome' | 'descricao'>>): Promise<Curso> =>
+    request(`/cursos/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  delete: (id: number): Promise<void> =>
+    request(`/cursos/${id}`, { method: 'DELETE' }),
 };
 
 // ── Alunos ────────────────────────────────────────────────────────────────────
 
 export const alunosApi = {
-  list: async (): Promise<Aluno[]> => {
-    // return fetch(`${API_BASE}/alunos`).then(r => r.json()).then(p => p.data ?? p);
-    return [..._alunos];
-  },
-  create: async (data: Pick<Aluno, 'nome' | 'email' | 'matricula' | 'cursoId'>): Promise<Aluno> => {
-    // return fetch(`${API_BASE}/alunos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
-    const item: Aluno = { ...data, id: ++_seq.alunos, createdAt: ts(), updatedAt: ts() };
-    _alunos.push(item);
-    return item;
-  },
-  update: async (id: number, data: Partial<Pick<Aluno, 'nome' | 'email' | 'matricula' | 'cursoId'>>): Promise<Aluno> => {
-    // return fetch(`${API_BASE}/alunos/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
-    const i = _alunos.findIndex(a => a.id === id);
-    _alunos[i] = { ..._alunos[i], ...data, updatedAt: ts() };
-    return _alunos[i];
-  },
-  delete: async (id: number): Promise<void> => {
-    // await fetch(`${API_BASE}/alunos/${id}`, { method: 'DELETE' });
-    _alunos = _alunos.filter(a => a.id !== id);
-  },
+  list: (): Promise<Aluno[]> =>
+    request<PaginatedResult<Aluno>>(`/alunos${LIST_QS}`).then(p => p.data),
+  create: (data: Pick<Aluno, 'nome' | 'email' | 'matricula' | 'cursoId'>): Promise<Aluno> =>
+    request('/alunos', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<Pick<Aluno, 'nome' | 'email' | 'matricula' | 'cursoId'>>): Promise<Aluno> =>
+    request(`/alunos/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  delete: (id: number): Promise<void> =>
+    request(`/alunos/${id}`, { method: 'DELETE' }),
 };
 
 // ── Disciplinas ───────────────────────────────────────────────────────────────
 
 export const disciplinasApi = {
-  list: async (): Promise<Disciplina[]> => {
-    // return fetch(`${API_BASE}/disciplinas`).then(r => r.json()).then(p => p.data ?? p);
-    return [..._disciplinas];
-  },
-  create: async (data: Pick<Disciplina, 'nome' | 'codigo' | 'cargaHoraria' | 'limiteVagas' | 'cursoId' | 'prerequisitoIds' | 'ativa'>): Promise<Disciplina> => {
-    // return fetch(`${API_BASE}/disciplinas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
-    const item: Disciplina = { ...data, id: ++_seq.disciplinas, vagasOcupadas: 0, createdAt: ts(), updatedAt: ts() };
-    _disciplinas.push(item);
-    return item;
-  },
-  update: async (id: number, data: Partial<Pick<Disciplina, 'nome' | 'codigo' | 'cargaHoraria' | 'limiteVagas' | 'cursoId' | 'prerequisitoIds' | 'ativa'>>): Promise<Disciplina> => {
-    // return fetch(`${API_BASE}/disciplinas/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
-    const i = _disciplinas.findIndex(d => d.id === id);
-    _disciplinas[i] = { ..._disciplinas[i], ...data, updatedAt: ts() };
-    return _disciplinas[i];
-  },
-  delete: async (id: number): Promise<void> => {
-    // await fetch(`${API_BASE}/disciplinas/${id}`, { method: 'DELETE' });
-    _disciplinas = _disciplinas.filter(d => d.id !== id);
-  },
+  list: (): Promise<Disciplina[]> =>
+    request<PaginatedResult<DisciplinaResponse>>(`/disciplinas${LIST_QS}`)
+      .then(p => p.data.map(toDisciplina)),
+  create: (data: Pick<Disciplina, 'nome' | 'codigo' | 'cargaHoraria' | 'limiteVagas' | 'cursoId' | 'prerequisitoIds' | 'ativa'>): Promise<Disciplina> =>
+    request<DisciplinaResponse>(`/disciplinas`, { method: 'POST', body: JSON.stringify(data) }).then(toDisciplina),
+  update: (id: number, data: Partial<Pick<Disciplina, 'nome' | 'codigo' | 'cargaHoraria' | 'limiteVagas' | 'cursoId' | 'prerequisitoIds' | 'ativa'>>): Promise<Disciplina> =>
+    request<DisciplinaResponse>(`/disciplinas/${id}`, { method: 'PATCH', body: JSON.stringify(data) }).then(toDisciplina),
+  delete: (id: number): Promise<void> =>
+    request(`/disciplinas/${id}`, { method: 'DELETE' }),
+};
+
+// ── Matrículas ────────────────────────────────────────────────────────────────
+// GET /matriculas não é paginado (retorna o array completo), diferente dos demais.
+
+export const matriculasApi = {
+  list: (): Promise<Matricula[]> =>
+    request('/matriculas'),
+  create: (data: Pick<Matricula, 'alunoId' | 'disciplinaId'>): Promise<Matricula> =>
+    request('/matriculas', { method: 'POST', body: JSON.stringify(data) }),
 };
