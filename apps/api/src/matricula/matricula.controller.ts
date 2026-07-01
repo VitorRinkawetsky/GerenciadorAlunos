@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 
 import { MatriculaService } from './matricula.service';
 import { CreateMatriculaDto } from './dto/create-matricula.dto';

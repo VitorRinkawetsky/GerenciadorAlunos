@@ -21,7 +21,9 @@ describe('MatriculaController', () => {
       findAlunosByDisciplina: jest.fn(),
       findAlunosByCurso: jest.fn(),
     };
-    controller = new MatriculaController(service as unknown as MatriculaService);
+    controller = new MatriculaController(
+      service as unknown as MatriculaService,
+    );
   });
 
   it('deve delegar criacao ao service', () => {

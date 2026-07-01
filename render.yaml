@@ -6,7 +6,7 @@ services:
     rootDir: apps/api
     buildCommand: npm ci && npm run build
     startCommand: npm run start:prod
-    autoDeploy: true
+    autoDeployTrigger: commit
     envVars:
       - key: NODE_VERSION
         value: 22

@@ -80,7 +80,9 @@ export class DisciplinaService {
     const total = filtered.length;
     const totalPages = Math.max(1, Math.ceil(total / limit));
     const start = (page - 1) * limit;
-    const data = filtered.slice(start, start + limit).map((d) => this.toResponse(d));
+    const data = filtered
+      .slice(start, start + limit)
+      .map((d) => this.toResponse(d));
 
     return { data, meta: { page, limit, total, totalPages } };
   }
@@ -146,7 +148,8 @@ export class DisciplinaService {
     }
 
     if (dto.nome !== undefined) disciplina.nome = dto.nome;
-    if (dto.cargaHoraria !== undefined) disciplina.cargaHoraria = dto.cargaHoraria;
+    if (dto.cargaHoraria !== undefined)
+      disciplina.cargaHoraria = dto.cargaHoraria;
     if (dto.ativa !== undefined) disciplina.ativa = dto.ativa;
 
     disciplina.updatedAt = new Date();
