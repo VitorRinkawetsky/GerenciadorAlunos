@@ -50,6 +50,8 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: [lint, test]
+    env:
+      VITE_API_URL: ${{ vars.VITE_API_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -66,24 +68,33 @@ jobs:
           retention-days: 7
 
   deploy:
-    name: Deploy (Vercel)
+    name: Deploy (S3)
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    defaults:
+      run:
+        working-directory: .
     steps:
-      - uses: actions/checkout@v4
-      - name: Deploy to Vercel
-        if: ${{ env.VERCEL_TOKEN != '' }}
-        run: |
-          npm install -g vercel@latest
-          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-          vercel build --prod --token="$VERCEL_TOKEN"
-          vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+      - name: Download build artifact
+        if: ${{ env.AWS_ACCESS_KEY_ID != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: dist
+      - name: Configure AWS credentials
+        if: ${{ env.AWS_ACCESS_KEY_ID != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Sync to S3
+        if: ${{ env.AWS_ACCESS_KEY_ID != '' }}
+        run: aws s3 sync dist "s3://${{ vars.S3_BUCKET }}" --delete
       - name: Skip deploy
-        if: ${{ env.VERCEL_TOKEN == '' }}
+        if: ${{ env.AWS_ACCESS_KEY_ID == '' }}
         run: |
-          echo "::warning::VERCEL_TOKEN secret is not set, skipping deploy. See DEPLOY.md."
+          echo "::warning::AWS_ACCESS_KEY_ID secret is not set, skipping deploy. See DEPLOY.md."
