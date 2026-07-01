@@ -10,5 +10,6 @@ import { MatriculaModule } from './matricula/matricula.module';
   imports: [CursoModule, AlunoModule, DisciplinaModule, MatriculaModule],
   controllers: [AppController],
   providers: [AppService],
+  
 })
 export class AppModule {}
