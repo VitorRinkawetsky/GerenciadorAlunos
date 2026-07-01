@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { Curso } from '../types'
 import { cursosApi } from '../services/api'
 import { useCursos } from '../hooks/useCursos'
+import { useAlunos } from '../hooks/useAlunos'
+import { useDisciplinas } from '../hooks/useDisciplinas'
 import { pluralize } from '../utils/format'
 import Modal from '../components/Modal'
 import { toast } from '../components/Toast'
@@ -11,6 +13,8 @@ const EMPTY: FormState = { nome: '', descricao: '' }
 
 export default function CursosPage() {
   const { cursos, reload } = useCursos()
+  const { alunos } = useAlunos()
+  const { disciplinas } = useDisciplinas()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Curso | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY)
@@ -20,6 +24,10 @@ export default function CursosPage() {
   const openEdit = (c: Curso) => { setEditing(c); setForm({ nome: c.nome, descricao: c.descricao }); setOpen(true) }
 
   const handleDelete = async (id: number) => {
+    if (alunos.some(a => a.cursoId === id) || disciplinas.some(d => d.cursoId === id)) {
+      toast('Não é possível excluir: há alunos ou disciplinas vinculados a este curso', 'error')
+      return
+    }
     if (!confirm('Excluir este curso?')) return
     try {
       await cursosApi.delete(id)

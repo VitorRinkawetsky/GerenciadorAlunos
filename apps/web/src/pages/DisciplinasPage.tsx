@@ -3,6 +3,7 @@ import type { Disciplina } from '../types'
 import { disciplinasApi } from '../services/api'
 import { useDisciplinas } from '../hooks/useDisciplinas'
 import { useCursos } from '../hooks/useCursos'
+import { useMatriculas } from '../hooks/useMatriculas'
 import { pluralize, vagasPct } from '../utils/format'
 import Modal from '../components/Modal'
 import { toast } from '../components/Toast'
@@ -20,6 +21,7 @@ const EMPTY: FormState = {
 export default function DisciplinasPage() {
   const { disciplinas, reload } = useDisciplinas()
   const { cursos } = useCursos()
+  const { matriculas } = useMatriculas()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Disciplina | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY)
@@ -42,6 +44,10 @@ export default function DisciplinasPage() {
   }
 
   const handleDelete = async (id: number) => {
+    if (matriculas.some(m => m.disciplinaId === id)) {
+      toast('Não é possível excluir: há alunos matriculados nesta disciplina', 'error')
+      return
+    }
     if (!confirm('Excluir esta disciplina?')) return
     try {
       await disciplinasApi.delete(id)

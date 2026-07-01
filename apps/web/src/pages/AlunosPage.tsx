@@ -3,6 +3,7 @@ import type { Aluno } from '../types'
 import { alunosApi } from '../services/api'
 import { useAlunos } from '../hooks/useAlunos'
 import { useCursos } from '../hooks/useCursos'
+import { useMatriculas } from '../hooks/useMatriculas'
 import { pluralize } from '../utils/format'
 import Modal from '../components/Modal'
 import { toast } from '../components/Toast'
@@ -13,6 +14,7 @@ const EMPTY: FormState = { nome: '', email: '', matricula: '', cursoId: '' }
 export default function AlunosPage() {
   const { alunos, reload } = useAlunos()
   const { cursos } = useCursos()
+  const { matriculas } = useMatriculas()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Aluno | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY)
@@ -28,6 +30,10 @@ export default function AlunosPage() {
   }
 
   const handleDelete = async (id: number) => {
+    if (matriculas.some(m => m.alunoId === id)) {
+      toast('Não é possível excluir: este aluno possui matrícula em disciplina', 'error')
+      return
+    }
     if (!confirm('Excluir este aluno?')) return
     try {
       await alunosApi.delete(id)
