@@ -6,7 +6,7 @@ import { useCursos } from '../hooks/useCursos'
 import { useDisciplinas } from '../hooks/useDisciplinas'
 import { pluralize } from '../utils/format'
 import Modal from '../components/Modal'
-import { toast } from '../components/Toast'
+import { toast } from '../lib/toast'
 
 interface FormState { alunoId: string; disciplinaId: string }
 const EMPTY: FormState = { alunoId: '', disciplinaId: '' }

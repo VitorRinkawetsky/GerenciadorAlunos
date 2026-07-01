@@ -1,17 +1,10 @@
 import { useState, useCallback, useEffect } from 'react'
-
-export type ToastType = 'success' | 'error'
+import { setToastListener, type ToastType } from '../lib/toast'
 
 interface ToastMessage {
   id: number
   message: string
   type: ToastType
-}
-
-let _emit: ((msg: string, type: ToastType) => void) | null = null
-
-export function toast(message: string, type: ToastType = 'success') {
-  _emit?.(message, type)
 }
 
 let _seq = 0
@@ -23,12 +16,12 @@ export default function ToastContainer() {
     setToasts(prev => prev.filter(t => t.id !== id)), [])
 
   useEffect(() => {
-    _emit = (message, type) => {
+    setToastListener((message, type) => {
       const id = ++_seq
       setToasts(prev => [...prev, { id, message, type }])
       setTimeout(() => remove(id), 3500)
-    }
-    return () => { _emit = null }
+    })
+    return () => setToastListener(null)
   }, [remove])
 
   if (toasts.length === 0) return null

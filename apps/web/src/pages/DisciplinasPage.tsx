@@ -6,7 +6,7 @@ import { useCursos } from '../hooks/useCursos'
 import { useMatriculas } from '../hooks/useMatriculas'
 import { pluralize, vagasPct } from '../utils/format'
 import Modal from '../components/Modal'
-import { toast } from '../components/Toast'
+import { toast } from '../lib/toast'
 
 interface FormState {
   nome: string; codigo: string; cargaHoraria: string; limiteVagas: string
@@ -75,7 +75,11 @@ export default function DisciplinasPage() {
       cursoId: Number(form.cursoId), prerequisitoIds: form.prerequisitoIds, ativa: form.ativa,
     }
     try {
-      editing ? await disciplinasApi.update(editing.id, payload) : await disciplinasApi.create(payload)
+      if (editing) {
+        await disciplinasApi.update(editing.id, payload)
+      } else {
+        await disciplinasApi.create(payload)
+      }
       toast(editing ? 'Disciplina atualizada' : 'Disciplina criada com sucesso')
       setOpen(false)
       reload()

@@ -6,7 +6,7 @@ import { useCursos } from '../hooks/useCursos'
 import { useMatriculas } from '../hooks/useMatriculas'
 import { pluralize } from '../utils/format'
 import Modal from '../components/Modal'
-import { toast } from '../components/Toast'
+import { toast } from '../lib/toast'
 
 interface FormState { nome: string; email: string; matricula: string; cursoId: string }
 const EMPTY: FormState = { nome: '', email: '', matricula: '', cursoId: '' }
@@ -49,7 +49,11 @@ export default function AlunosPage() {
     setSaving(true)
     const payload = { ...form, cursoId: Number(form.cursoId) }
     try {
-      editing ? await alunosApi.update(editing.id, payload) : await alunosApi.create(payload)
+      if (editing) {
+        await alunosApi.update(editing.id, payload)
+      } else {
+        await alunosApi.create(payload)
+      }
       toast(editing ? 'Aluno atualizado' : 'Aluno criado com sucesso')
       setOpen(false)
       reload()

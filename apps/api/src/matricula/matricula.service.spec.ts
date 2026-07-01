@@ -79,9 +79,9 @@ describe('MatriculaService', () => {
   it('deve rejeitar matricula duplicada e id inexistente', () => {
     service.create({ alunoId: 1, disciplinaId: 2 });
 
-    expect(() =>
-      service.create({ alunoId: 1, disciplinaId: 2 }),
-    ).toThrow(ConflictException);
+    expect(() => service.create({ alunoId: 1, disciplinaId: 2 })).toThrow(
+      ConflictException,
+    );
     expect(() => service.findOne(999)).toThrow(NotFoundException);
     expect(() => service.remove(999)).toThrow(NotFoundException);
   });
