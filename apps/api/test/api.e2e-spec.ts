@@ -8,6 +8,10 @@ import { AllExceptionsFilter } from './../src/common/filters/http-exception.filt
 type IdResponse = { id: number };
 type CursoResponse = IdResponse & { nome: string };
 type DisciplinaResponse = IdResponse & { codigo: string };
+type MatriculaResponse = IdResponse & {
+  alunoId: number;
+  disciplinaId: number;
+};
 type PaginatedCursoResponse = {
   data: CursoResponse[];
   meta: { total: number };
@@ -158,5 +162,103 @@ describe('API (e2e)', () => {
         expect(body).toHaveLength(1);
         expect(body[0].id).toBe(algoritmosBody.id);
       });
+  });
+
+  it('deve criar e consultar matriculas via HTTP', async () => {
+    const curso = await request(app.getHttpServer())
+      .post('/cursos')
+      .send({
+        nome: 'Ciencia da Computacao',
+        descricao: 'Curso focado em computacao e software.',
+      })
+      .expect(201);
+    const cursoBody = curso.body as IdResponse;
+
+    const aluno = await request(app.getHttpServer())
+      .post('/alunos')
+      .send({
+        nome: 'Carla Souza',
+        email: 'carla.souza@example.com',
+        matricula: 'MAT100',
+        cursoId: cursoBody.id,
+      })
+      .expect(201);
+    const alunoBody = aluno.body as IdResponse;
+
+    const disciplina = await request(app.getHttpServer())
+      .post('/disciplinas')
+      .send({
+        nome: 'Arquitetura de Software',
+        codigo: 'ARQ001',
+        cargaHoraria: 80,
+        limiteVagas: 30,
+        cursoId: cursoBody.id,
+      })
+      .expect(201);
+    const disciplinaBody = disciplina.body as IdResponse;
+
+    const created = await request(app.getHttpServer())
+      .post('/matriculas')
+      .send({
+        alunoId: alunoBody.id,
+        disciplinaId: disciplinaBody.id,
+      })
+      .expect(201);
+
+    const matriculaBody = created.body as MatriculaResponse;
+    expect(matriculaBody).toMatchObject({
+      alunoId: alunoBody.id,
+      disciplinaId: disciplinaBody.id,
+    });
+
+    await request(app.getHttpServer())
+      .get('/matriculas')
+      .expect(200)
+      .expect((response) => {
+        const body = response.body as MatriculaResponse[];
+        expect(body).toHaveLength(1);
+        expect(body[0].id).toBe(matriculaBody.id);
+      });
+
+    await request(app.getHttpServer())
+      .get(`/matriculas/${matriculaBody.id}`)
+      .expect(200)
+      .expect((response) => {
+        const body = response.body as MatriculaResponse;
+        expect(body.alunoId).toBe(alunoBody.id);
+      });
+
+    await request(app.getHttpServer())
+      .get(`/matriculas/alunos/${alunoBody.id}/disciplinas`)
+      .expect(200)
+      .expect((response) => {
+        const body = response.body as MatriculaResponse[];
+        expect(body).toHaveLength(1);
+        expect(body[0].disciplinaId).toBe(disciplinaBody.id);
+      });
+
+    await request(app.getHttpServer())
+      .get(`/matriculas/disciplinas/${disciplinaBody.id}/alunos`)
+      .expect(200)
+      .expect((response) => {
+        const body = response.body as MatriculaResponse[];
+        expect(body).toHaveLength(1);
+        expect(body[0].alunoId).toBe(alunoBody.id);
+      });
+
+    await request(app.getHttpServer())
+      .get(`/matriculas/cursos/${cursoBody.id}/alunos`)
+      .expect(200)
+      .expect((response) => {
+        expect(response.body).toEqual([]);
+      });
+
+    await request(app.getHttpServer())
+      .post('/matriculas')
+      .send({
+        alunoId: alunoBody.id,
+        disciplinaId: disciplinaBody.id,
+      })
+      .expect(409);
   });
 });

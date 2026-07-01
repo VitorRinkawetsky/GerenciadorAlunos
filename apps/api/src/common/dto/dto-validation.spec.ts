@@ -8,6 +8,7 @@ import { CreateCursoDto } from '../../curso/dto/create-curso.dto';
 import { QueryCursoDto } from '../../curso/dto/query-curso.dto';
 import { UpdateCursoDto } from '../../curso/dto/update-curso.dto';
 import { CreateDisciplinaDto } from '../../disciplina/dto/create-disciplina.dto';
+import { CreateMatriculaDto } from '../../matricula/dto/create-matricula.dto';
 import { QueryDisciplinaDto } from '../../disciplina/dto/query-disciplina.dto';
 import { UpdateDisciplinaDto } from '../../disciplina/dto/update-disciplina.dto';
 import { PaginationDto } from './pagination.dto';
@@ -53,6 +54,14 @@ describe('DTO validations', () => {
     );
   });
 
+  it('deve validar campos obrigatorios de matricula', async () => {
+    const errors = await validateDto(CreateMatriculaDto, {});
+
+    expect(properties(errors)).toEqual(
+      expect.arrayContaining(['alunoId', 'disciplinaId']),
+    );
+  });
+
   it('deve rejeitar formatos e limites invalidos', async () => {
     const alunoErrors = await validateDto(CreateAlunoDto, {
       nome: 'An',
@@ -69,6 +78,10 @@ describe('DTO validations', () => {
       prerequisitoIds: [1, 1],
       ativa: 'sim',
     });
+    const matriculaErrors = await validateDto(CreateMatriculaDto, {
+      alunoId: 0,
+      disciplinaId: -1,
+    });
 
     expect(properties(alunoErrors)).toEqual(
       expect.arrayContaining(['nome', 'email', 'matricula', 'cursoId']),
@@ -83,6 +96,9 @@ describe('DTO validations', () => {
         'prerequisitoIds',
         'ativa',
       ]),
+    );
+    expect(properties(matriculaErrors)).toEqual(
+      expect.arrayContaining(['alunoId', 'disciplinaId']),
     );
   });
 
