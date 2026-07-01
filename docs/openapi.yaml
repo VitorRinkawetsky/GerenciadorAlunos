@@ -1,0 +1,1003 @@
+openapi: 3.0.3
+info:
+  title: Gerenciador de Alunos API
+  description: |
+    Especificacao OpenAPI da API do projeto Gerenciador de Alunos.
+
+    A API gerencia cursos, alunos, disciplinas e matriculas. Os dados sao
+    mantidos em memoria durante a execucao da aplicacao.
+  version: 1.0.0
+  contact:
+    name: Equipe Gerenciador de Alunos
+servers:
+  - url: http://localhost:3000
+    description: Ambiente local
+tags:
+  - name: Health
+    description: Verificacao basica da API
+  - name: Cursos
+    description: CRUD de cursos
+  - name: Alunos
+    description: CRUD de alunos
+  - name: Disciplinas
+    description: CRUD de disciplinas e consulta de pre-requisitos
+  - name: Matriculas
+    description: Criacao de matriculas e consultas de relacionamento
+paths:
+  /:
+    get:
+      tags:
+        - Health
+      summary: Verifica se a API esta respondendo
+      responses:
+        "200":
+          description: API em funcionamento
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Hello World!
+  /cursos:
+    post:
+      tags:
+        - Cursos
+      summary: Cria um curso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCursoDto"
+            example:
+              nome: Analise e Desenvolvimento de Sistemas
+              descricao: Curso superior de tecnologia focado em desenvolvimento de software.
+      responses:
+        "201":
+          description: Curso criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Curso"
+              example:
+                id: 1
+                nome: Analise e Desenvolvimento de Sistemas
+                descricao: Curso superior de tecnologia focado em desenvolvimento de software.
+                createdAt: "2026-07-01T12:00:00.000Z"
+                updatedAt: "2026-07-01T12:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Ja existe um curso com este nome
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags:
+        - Cursos
+      summary: Lista cursos com paginacao e filtro opcional por nome
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: nome
+          in: query
+          required: false
+          schema:
+            type: string
+          example: sistemas
+      responses:
+        "200":
+          description: Lista paginada de cursos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedCursos"
+              example:
+                data:
+                  - id: 1
+                    nome: Analise e Desenvolvimento de Sistemas
+                    descricao: Curso superior de tecnologia focado em desenvolvimento de software.
+                    createdAt: "2026-07-01T12:00:00.000Z"
+                    updatedAt: "2026-07-01T12:00:00.000Z"
+                meta:
+                  page: 1
+                  limit: 10
+                  total: 1
+                  totalPages: 1
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /cursos/{id}:
+    get:
+      tags:
+        - Cursos
+      summary: Busca um curso pelo ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Curso encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Curso"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags:
+        - Cursos
+      summary: Atualiza parcialmente um curso
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCursoDto"
+            example:
+              nome: Sistemas para Internet
+      responses:
+        "200":
+          description: Curso atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Curso"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Nome de curso ja cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags:
+        - Cursos
+      summary: Remove um curso
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Curso removido com sucesso
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /alunos:
+    post:
+      tags:
+        - Alunos
+      summary: Cria um aluno
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAlunoDto"
+            example:
+              nome: Maria Oliveira
+              email: maria.oliveira@email.com
+              matricula: ADS2026001
+              cursoId: 1
+      responses:
+        "201":
+          description: Aluno criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aluno"
+              example:
+                id: 1
+                nome: Maria Oliveira
+                email: maria.oliveira@email.com
+                matricula: ADS2026001
+                cursoId: 1
+                createdAt: "2026-07-01T12:00:00.000Z"
+                updatedAt: "2026-07-01T12:00:00.000Z"
+        "400":
+          description: Dados invalidos ou curso inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email ou matricula ja cadastrados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags:
+        - Alunos
+      summary: Lista alunos com paginacao e filtros
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: nome
+          in: query
+          required: false
+          schema:
+            type: string
+          example: Maria
+        - name: cursoId
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+      responses:
+        "200":
+          description: Lista paginada de alunos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedAlunos"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /alunos/{id}:
+    get:
+      tags:
+        - Alunos
+      summary: Busca um aluno pelo ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Aluno encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aluno"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags:
+        - Alunos
+      summary: Atualiza parcialmente um aluno
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAlunoDto"
+            example:
+              email: maria.ads@email.com
+      responses:
+        "200":
+          description: Aluno atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aluno"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Email ou matricula ja cadastrados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags:
+        - Alunos
+      summary: Remove um aluno
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Aluno removido com sucesso
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /disciplinas:
+    post:
+      tags:
+        - Disciplinas
+      summary: Cria uma disciplina
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDisciplinaDto"
+            example:
+              nome: Programacao Web
+              codigo: WEB101
+              cargaHoraria: 80
+              limiteVagas: 40
+              cursoId: 1
+              prerequisitoIds: []
+              ativa: true
+      responses:
+        "201":
+          description: Disciplina criada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisciplinaResponse"
+              example:
+                id: 1
+                nome: Programacao Web
+                codigo: WEB101
+                cargaHoraria: 80
+                limiteVagas: 40
+                ativa: true
+                cursoId: 1
+                prerequisitoIds: []
+                createdAt: "2026-07-01T12:00:00.000Z"
+                updatedAt: "2026-07-01T12:00:00.000Z"
+                vagasDisponiveis: 40
+        "400":
+          description: Dados invalidos, curso inexistente ou pre-requisito inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Codigo de disciplina ja cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags:
+        - Disciplinas
+      summary: Lista disciplinas com paginacao e filtros
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: nome
+          in: query
+          required: false
+          schema:
+            type: string
+          example: Web
+        - name: cursoId
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+        - name: ativa
+          in: query
+          required: false
+          schema:
+            type: boolean
+          example: true
+      responses:
+        "200":
+          description: Lista paginada de disciplinas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedDisciplinas"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /disciplinas/{id}:
+    get:
+      tags:
+        - Disciplinas
+      summary: Busca uma disciplina pelo ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Disciplina encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisciplinaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags:
+        - Disciplinas
+      summary: Atualiza parcialmente uma disciplina
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDisciplinaDto"
+            example:
+              limiteVagas: 45
+              ativa: true
+      responses:
+        "200":
+          description: Disciplina atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisciplinaResponse"
+        "400":
+          description: Dados invalidos, regra de negocio violada ou ID invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Codigo ja cadastrado ou exclusao/alteracao conflitando com matriculas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags:
+        - Disciplinas
+      summary: Remove uma disciplina
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Disciplina removida com sucesso
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Disciplina possui alunos matriculados ou e pre-requisito de outra disciplina
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /disciplinas/{id}/prerequisitos:
+    get:
+      tags:
+        - Disciplinas
+      summary: Lista os pre-requisitos de uma disciplina
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Lista de disciplinas pre-requisito
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DisciplinaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /matriculas:
+    post:
+      tags:
+        - Matriculas
+      summary: Cria uma matricula de aluno em disciplina
+      description: Na implementacao atual, o servico valida duplicidade da matricula, mas nao valida a existencia do aluno ou da disciplina informados.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMatriculaDto"
+            example:
+              alunoId: 1
+              disciplinaId: 1
+      responses:
+        "201":
+          description: Matricula criada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Matricula"
+              example:
+                id: 1
+                alunoId: 1
+                disciplinaId: 1
+                createdAt: "2026-07-01T12:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Aluno ja matriculado nesta disciplina
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags:
+        - Matriculas
+      summary: Lista todas as matriculas
+      responses:
+        "200":
+          description: Lista de matriculas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Matricula"
+              example:
+                - id: 1
+                  alunoId: 1
+                  disciplinaId: 1
+                  createdAt: "2026-07-01T12:00:00.000Z"
+  /matriculas/{id}:
+    get:
+      tags:
+        - Matriculas
+      summary: Busca uma matricula pelo ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Matricula encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Matricula"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /matriculas/alunos/{id}/disciplinas:
+    get:
+      tags:
+        - Matriculas
+      summary: Lista matriculas de um aluno em disciplinas
+      description: Retorna os registros de matricula associados ao aluno informado.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Lista de matriculas do aluno
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Matricula"
+  /matriculas/disciplinas/{id}/alunos:
+    get:
+      tags:
+        - Matriculas
+      summary: Lista matriculas de alunos em uma disciplina
+      description: Retorna os registros de matricula associados a disciplina informada.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Lista de matriculas da disciplina
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Matricula"
+  /matriculas/cursos/{id}/alunos:
+    get:
+      tags:
+        - Matriculas
+      summary: Lista alunos de um curso
+      description: Endpoint implementado no controller. No servico atual, retorna lista vazia.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Lista de matriculas/alunos do curso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Matricula"
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      example: 1
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+      example: 10
+  responses:
+    BadRequest:
+      description: Requisicao invalida ou falha de validacao
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 400
+            message:
+              - nome must be longer than or equal to 3 characters
+            error: Bad Request
+            timestamp: "2026-07-01T12:00:00.000Z"
+            path: /cursos
+    NotFound:
+      description: Recurso nao encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 404
+            message: Recurso nao encontrado
+            error: Not Found
+            timestamp: "2026-07-01T12:00:00.000Z"
+            path: /cursos/999
+  schemas:
+    Curso:
+      type: object
+      required:
+        - id
+        - nome
+        - descricao
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          example: 1
+        nome:
+          type: string
+          example: Analise e Desenvolvimento de Sistemas
+        descricao:
+          type: string
+          example: Curso superior de tecnologia focado em desenvolvimento de software.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateCursoDto:
+      type: object
+      required:
+        - nome
+        - descricao
+      properties:
+        nome:
+          type: string
+          minLength: 3
+          maxLength: 100
+        descricao:
+          type: string
+          minLength: 10
+          maxLength: 500
+    UpdateCursoDto:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 3
+          maxLength: 100
+        descricao:
+          type: string
+          minLength: 10
+          maxLength: 500
+    Aluno:
+      type: object
+      required:
+        - id
+        - nome
+        - email
+        - matricula
+        - cursoId
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          example: 1
+        nome:
+          type: string
+          example: Maria Oliveira
+        email:
+          type: string
+          format: email
+          example: maria.oliveira@email.com
+        matricula:
+          type: string
+          example: ADS2026001
+        cursoId:
+          type: integer
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateAlunoDto:
+      type: object
+      required:
+        - nome
+        - email
+        - matricula
+        - cursoId
+      properties:
+        nome:
+          type: string
+          minLength: 3
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        matricula:
+          type: string
+          minLength: 5
+          maxLength: 20
+        cursoId:
+          type: integer
+          minimum: 1
+    UpdateAlunoDto:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 3
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        matricula:
+          type: string
+          minLength: 5
+          maxLength: 20
+        cursoId:
+          type: integer
+          minimum: 1
+    DisciplinaResponse:
+      type: object
+      required:
+        - id
+        - nome
+        - codigo
+        - cargaHoraria
+        - limiteVagas
+        - vagasDisponiveis
+        - ativa
+        - cursoId
+        - prerequisitoIds
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          example: 1
+        nome:
+          type: string
+          example: Programacao Web
+        codigo:
+          type: string
+          example: WEB101
+        cargaHoraria:
+          type: integer
+          example: 80
+        limiteVagas:
+          type: integer
+          example: 40
+        vagasDisponiveis:
+          type: integer
+          example: 40
+        ativa:
+          type: boolean
+          example: true
+        cursoId:
+          type: integer
+          example: 1
+        prerequisitoIds:
+          type: array
+          items:
+            type: integer
+          example: []
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateDisciplinaDto:
+      type: object
+      required:
+        - nome
+        - codigo
+        - cargaHoraria
+        - limiteVagas
+        - cursoId
+      properties:
+        nome:
+          type: string
+          minLength: 3
+          maxLength: 120
+        codigo:
+          type: string
+          minLength: 2
+          maxLength: 20
+        cargaHoraria:
+          type: integer
+          minimum: 1
+          maximum: 400
+        limiteVagas:
+          type: integer
+          minimum: 1
+          maximum: 500
+        cursoId:
+          type: integer
+          minimum: 1
+        prerequisitoIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+        ativa:
+          type: boolean
+          default: true
+    UpdateDisciplinaDto:
+      type: object
+      description: Todos os campos sao opcionais na atualizacao.
+      properties:
+        nome:
+          type: string
+          minLength: 3
+          maxLength: 120
+        codigo:
+          type: string
+          minLength: 2
+          maxLength: 20
+        cargaHoraria:
+          type: integer
+          minimum: 1
+          maximum: 400
+        limiteVagas:
+          type: integer
+          minimum: 1
+          maximum: 500
+        cursoId:
+          type: integer
+          minimum: 1
+        prerequisitoIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+        ativa:
+          type: boolean
+    Matricula:
+      type: object
+      required:
+        - id
+        - alunoId
+        - disciplinaId
+        - createdAt
+      properties:
+        id:
+          type: integer
+          example: 1
+        alunoId:
+          type: integer
+          example: 1
+        disciplinaId:
+          type: integer
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+    CreateMatriculaDto:
+      type: object
+      required:
+        - alunoId
+        - disciplinaId
+      properties:
+        alunoId:
+          type: integer
+          minimum: 1
+        disciplinaId:
+          type: integer
+          minimum: 1
+    PaginationMeta:
+      type: object
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 1
+        totalPages:
+          type: integer
+          example: 1
+    PaginatedCursos:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Curso"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    PaginatedAlunos:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Aluno"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    PaginatedDisciplinas:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DisciplinaResponse"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    ErrorResponse:
+      type: object
+      required:
+        - statusCode
+        - message
+        - timestamp
+        - path
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        error:
+          type: string
+          nullable: true
+          example: Bad Request
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+          example: /alunos
